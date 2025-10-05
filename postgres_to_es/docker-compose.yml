@@ -5,6 +5,7 @@ services:
     container_name: postgres
     volumes:
       - ./database_dump.sql:/docker-entrypoint-initdb.d/init.sql
+      - data:/var/lib/postgresql/data
     env_file:
       - .env
     healthcheck:
@@ -43,3 +44,6 @@ services:
         condition: service_healthy
       elasticsearch:
         condition: service_healthy
+
+volumes:
+  data:
