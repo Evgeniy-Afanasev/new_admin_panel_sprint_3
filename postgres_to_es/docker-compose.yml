@@ -1,0 +1,45 @@
+version: '3'
+services:
+  postgres:
+    image: postgres:16
+    container_name: postgres
+    volumes:
+      - ./database_dump.sql:/docker-entrypoint-initdb.d/init.sql
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 30s
+      retries: 5
+      timeout: 30s
+    restart: always
+
+  elasticsearch:
+    image: elasticsearch:8.6.2
+    container_name: elasticsearch
+    ports:
+      - "9200:9200"
+    expose:
+      - "9200"
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms500m -Xmx500m"
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail http://localhost:9200 || exit 1"]
+      interval: 10s
+      retries: 5
+      timeout: 10s
+    restart: always
+
+  etl:
+    build: etl
+    container_name: etl
+    image: etl:latest
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
